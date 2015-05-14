@@ -75,7 +75,7 @@ void StreamSourceAppProxy::setBuffers(const Vector<sp<IMemory> > &buffers) {
 void StreamSourceAppProxy::onBufferAvailable(size_t index) {
     //SL_LOGD("StreamSourceAppProxy::onBufferAvailable(%d)", index);
 
-    {
+   if (index<0x80000000) {/*index > 0x80000000,is command only*/
         Mutex::Autolock _l(mLock);
         if (!mBuffersHasBeenSet) {
             // no buffers available to push data to from the buffer queue, bail
@@ -92,7 +92,13 @@ void StreamSourceAppProxy::onBufferAvailable(size_t index) {
     }
 
     // a new shared mem buffer is available: let's try to fill immediately
-    pullFromBuffQueue();
+    /// pullFromBuffQueue();
+    {
+        const sp<StreamPlayer> player(mPlayer.promote());
+        if (player != NULL) {
+            player->queueRefilled();
+        }
+    }
 }
 
 void StreamSourceAppProxy::receivedCmd_l(IStreamListener::Command cmd, const sp<AMessage> &msg) {
